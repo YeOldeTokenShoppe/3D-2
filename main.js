@@ -493,44 +493,48 @@ const getModel = () => {
 
       // Move vampire forward and slightly down during Walk animation
       const moveVampireForwardAndDown = () => {
-        const moveSpeed = 0.02; // Adjust for forward movement speed
-        const downSpeed = 0.003; // Adjust for downward movement speed
-        const intervalId = setInterval(() => {
-          vampire.position.z += moveSpeed; // Move forward
-          vampire.position.y -= downSpeed; // Move slightly down
+        const duration = 1.5; // Move duration (1-2 seconds)
 
-          // Stop the movement when the vampire has moved a certain distance
-          if (vampire.position.z >= -8.2) {
-            clearInterval(intervalId); // Stop moving forward
-            switchAnimation(walkAction, attackAction); // Start the attack animation
-          }
-        }, 16); // Runs approximately every frame (60fps)
+        gsap.to(vampire.position, {
+          z: -8.2,
+          y: vampire.position.y - 1,
+          duration: duration,
+          ease: "power1.inOut",
+          onComplete: () => {
+            switchAnimation(walkAction, attackAction); // Start attack after walking
+          },
+        });
+
+        // Trigger the fade effect 2 seconds after the walking action starts
+        setTimeout(() => {
+          fadeToRedAndShowDeathMessage(); // Start the fade to red
+        }, 2500); // 2000ms = 2 seconds
       };
 
       // Function to handle No button click
       const handleNoButton = () => {
-        console.log("No button was clicked"); // Ensure this gets logged
+        console.log("No button was clicked");
 
-        // Remove the popup
         const popupBox = document.getElementById("popupBox");
         if (popupBox) {
           popupBox.remove();
         }
 
-        // Switch animation and move the vampire after a delay
+        // Start the movement and walking animation
         setTimeout(() => {
-          console.log("Switching vampire animation"); // Log the animation switch
+          console.log("Switching vampire animation");
           switchAnimation(idleAction, walkAction);
-          moveVampireForwardAndDown();
-        }, 1000); // Adjust the delay for testing
+          moveVampireForwardAndDown(); // Start moving and trigger the fade after 2s
+        }, 100); // Slight delay for smoother transition (can adjust)
       };
 
       // Event listener for when the animation finishes
       vampireMixer.addEventListener("finished", () => {
         console.log("Vampire attack complete");
-        fadeToRedAndShowDeathMessage(); // Show the death message and red overlay
-      });
 
+        // Trigger the fade effect immediately after the attack finishes
+        fadeToRedAndShowDeathMessage();
+      });
       // Function to fade the screen to red and show the death message
       const fadeToRedAndShowDeathMessage = () => {
         const deathOverlay = document.getElementById("deathOverlay");
