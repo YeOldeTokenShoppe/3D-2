@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    
+    <script type="module" crossorigin src="/assets/index-710fbd2e.js"></script>
+    <link rel="stylesheet" href="/assets/index-b90cfcc0.css">
+  </head>
+  <body>
+    <div id="loadingScreen" class="pl">
+      <div class="pl__coin">
+        <div class="pl__coin-flare"></div>
+        <div class="pl__coin-flare"></div>
+        <div class="pl__coin-flare"></div>
+        <div class="pl__coin-flare"></div>
+        <div class="pl__coin-layers">
+          <div class="pl__coin-layer">
+            <div class="pl__coin-inscription">RL80</div>
+          </div>
+          <div class="pl__coin-layer"></div>
+          <div class="pl__coin-layer"></div>
+          <div class="pl__coin-layer"></div>
+          <div class="pl__coin-layer">
+            <div class="pl__coin-inscription">RL80</div>
+          </div>
+        </div>
+      </div>
+      <div class="pl__shadow"></div>
+    </div>
+    <div id="deathOverlay"></div>
+    <div id="deathTextBox">
+      Oh, no! You have become Nos4a2's latest victim.
+      <br />
+      <div style="display: inline-block; transform: scale(2)">☠</div>
+    </div>
+
+    <canvas class="webgl"></canvas>
+    <!-- Sky and Stars Divs -->
+    <div class="sky">
+      <div class="stars"></div>
+    </div>
+    <!-- Shaders and Scripts -->
+    <script type="x-shader/x-vertex" id="vertexshader">
+      uniform float uPixelRatio;
+      uniform float uSize;
+      uniform float uTime;
+      attribute float aScale;
+      void main() {
+          vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+          modelPosition.y += sin(uTime + modelPosition.x * 100.0) * aScale * 0.25;
+          modelPosition.z += sin(uTime + modelPosition.x * 100.0) * aScale * 0.25;
+          modelPosition.x += cos(uTime + modelPosition.x * 100.0) * aScale * 0.25;
+          vec4 viewPosition = viewMatrix * modelPosition;
+          vec4 projectionPostion = projectionMatrix * viewPosition;
+
+          gl_Position = projectionPostion;
+          gl_PointSize = uSize * aScale * uPixelRatio;
+          gl_PointSize += (1.0 / - viewPosition.z);
+      }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentshader">
+      void main() {
+          float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
+          float strength = 0.05 / distanceToCenter - 0.1;
+          gl_FragColor = vec4(1.0, 1.0, 1.0, strength);
+      }
+    </script>
+
+    <script type="x-shader/x-vertex" id="vertexshaderCandle">
+      void main() {
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentshaderCandle">
+      uniform float time;
+      uniform float colorSpeed;
+      uniform float delay;
+      uniform vec3 baseColor;
+      varying vec2 vUv;
+
+      void main() {
+          float animatedTime = time - delay;
+          animatedTime = mod(animatedTime, colorSpeed);
+          float mixFactor = animatedTime / colorSpeed;
+          vec3 finalColor = mix(baseColor, vec3(0.945,0.714,0.522), mixFactor);
+          gl_FragColor = vec4(finalColor, 1.0);
+      }
+    </script>
+
+    
+  </body>
+</html>
