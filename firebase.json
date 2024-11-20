@@ -1,13 +1,10 @@
 {
   "hosting": {
-    "site": "d-rl80-df626",
-    "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
     ],
     "frameworksBackend": {
       "region": "us-west1"

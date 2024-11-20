@@ -33,7 +33,25 @@
       <br />
       <div style="display: inline-block; transform: scale(2)">☠</div>
     </div>
+    <div class="annotation annotation1" style="display: none">
+      <div class="box box1">
+        <div class="circleMark circleMark1">1</div>
+        <div class="boxInner">
+          <p><strong>Annotation 1</strong></p>
+          <p>This is some information about the first marker.</p>
+        </div>
+      </div>
+    </div>
 
+    <div class="annotation annotation2" style="display: none">
+      <div class="box box2">
+        <div class="circleMark circleMark2">2</div>
+        <div class="boxInner">
+          <p><strong>Annotation 2</strong></p>
+          <p>This is some information about the second marker.</p>
+        </div>
+      </div>
+    </div>
     <canvas class="webgl"></canvas>
     <!-- Sky and Stars Divs -->
     <div class="sky">
@@ -89,6 +107,10 @@
       }
     </script>
 
+    <script
+      type="module"
+      src="https://cdnjs.cloudflare.com/ajax/libs/three.js/85/three.min.js"
+    ></script>
     <script type="module" src="/main.js"></script>
   </body>
 </html>

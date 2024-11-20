@@ -37,7 +37,7 @@ const camera = new THREE.PerspectiveCamera(
   10, // Field of view
   sizes.width / sizes.height, // Aspect ratio
   0.1, // Near clipping plane
-  1000 // Far clipping plane
+  200 // Far clipping plane
 );
 
 const renderer = new THREE.WebGLRenderer({
@@ -61,7 +61,7 @@ const minPan = new THREE.Vector3(-1, -1, -1);
 const maxPan = new THREE.Vector3(1, 1, 1);
 const clock = new THREE.Clock(),
   clockFF = new THREE.Clock();
-let vampireMixer, vampireAnimations;
+let vampireMixer, vampireAnimations, vampire2Mixer, vampire2Animations;
 let animations,
   animation01,
   animation02,
@@ -85,7 +85,6 @@ let animations,
   vampire2,
   chart,
   arrow,
-  pumpkin1,
   moon,
   chest,
   chestMarker = null;
@@ -119,20 +118,20 @@ const getControls = () => {
 
 const getLights = () => {
   // scene.add(new THREE.AmbientLight(0xffffff, .025))
-  scene.add(new THREE.AmbientLight(0x4b2e2a, 0.1));
+  scene.add(new THREE.AmbientLight(0x4b2e2a, 0.08));
 
-  const window1 = new THREE.PointLight(0xffffff, 0.5, 5);
-  window1.position.set(-10, 6, -10);
-  scene.add(window1);
+  // const window1 = new THREE.PointLight(0xffffff, 0.5, 5);
+  // window1.position.set(-10, 6, -10);
+  // scene.add(window1);
 
-  const window2 = new THREE.PointLight(0xffffff, 0.5, 5);
-  window2.position.set(-12, 6, -8);
-  scene.add(window2);
+  // const window2 = new THREE.PointLight(0xffffff, 0.5, 5);
+  // window2.position.set(-12, 6, -8);
+  // scene.add(window2);
 
-  const window3 = new THREE.PointLight(0xffffff, 0.5, 4);
-  window3.position.set(-12, 6, -8);
-  window3.intensity = 0.4; // Further reduce the fill light to avoid over-brightness
-  scene.add(window3);
+  // const window3 = new THREE.PointLight(0xffffff, 0.5, 4);
+  // window3.position.set(-12, 6, -8);
+  // window3.intensity = 0.4; // Further reduce the fill light to avoid over-brightness
+  // scene.add(window3);
 
   const lgBottom = new THREE.PointLight(0xff0000, 5, 6, 2);
   lgBottom.position.set(0, -6, -2);
@@ -363,7 +362,7 @@ const getModel = () => {
   });
 
   // Ensure your room objects remain on the default layer (layer 0)
-  gltfLoader.load("things10.glb", (gltf) => {
+  gltfLoader.load("Things15.glb", (gltf) => {
     scene.add(gltf.scene);
   });
 
@@ -410,33 +409,58 @@ const getModel = () => {
       console.error("Error loading arrow:", error);
     }
   );
-  gltfLoader.load("pumpkin1.glb", (gltf) => {
-    pumpkin1 = gltf.scene;
-
-    pumpkin1.scale.set(1.3, 1.3, 1.3);
-    pumpkin1.position.set(7, 0.6, 1);
-    // chart.rotation.set(0, Math.PI, 0);
-
-    scene.add(pumpkin1);
-  });
 
   // Load vampire2 separately outside the vampire loader
-  gltfLoader.load("vampire2.glb", (gltf) => {
+  // gltfLoader.load("customVampire.glb", (gltf) => {
+  //   vampire2 = gltf.scene;
+  //   const vampire2Animations = gltf.animations;
+
+  //   vampire2.scale.set(100, 100, 100); // Final size
+  //   vampire2.position.set(4, -26.3, 2); // Coffin position
+  //   vampire2.rotation.set(0, Math.PI, 0); // Adjust rotation to match
+  //   vampire2.visible = false; // Initially hidden
+  //   const removeFirstKeyframe = (clip) => {
+  //     clip.tracks.forEach((track) => {
+  //       track.times = track.times.slice(1);
+  //       track.values = track.values.slice(track.getValueSize());
+  //     });
+  //     clip.resetDuration();
+  //   };
+
+  //   // Apply the same keyframe removal to vampire2 animations
+  //   vampire2Animations.forEach((clip) => removeFirstKeyframe(clip));
+
+  //   scene.add(vampire2); // Add vampire2 to the scene
+  // });
+  gltfLoader.load("customVampire.glb", (gltf) => {
     vampire2 = gltf.scene;
+    const vampire2Animations = gltf.animations;
 
     vampire2.scale.set(100, 100, 100); // Final size
-    vampire2.position.set(4, -26.3, 2); // Coffin position
+    vampire2.position.set(4, -27, 2); // Coffin position
     vampire2.rotation.set(0, Math.PI, 0); // Adjust rotation to match
     vampire2.visible = false; // Initially hidden
 
-    scene.add(vampire2); // Add vampire2 to the scene
-  });
+    // Initialize an AnimationMixer for vampire2
+    vampire2Mixer = new THREE.AnimationMixer(vampire2);
 
-  // Then in the Yes button handler
-  const handleYesButton = () => {
-    vampire.visible = false; // Hide the original vampire
-    vampire2.visible = true; // Show the hurt vampire
-  };
+    // Look for an animation (the action pose)
+    if (vampire2Animations && vampire2Animations.length > 0) {
+      const actionPose = vampire2Animations[0]; // Assuming the first animation is the "Action" pose
+
+      // Play the action pose to set the model's pose
+      const action = vampire2Mixer.clipAction(actionPose);
+      action.play(); // Play the pose
+
+      // Optionally, set the time to 0 to ensure it's the correct frame
+      vampire2Mixer.setTime(0); // Applies the first frame (pose)
+    } else {
+      console.error("No animations found for vampire2");
+    }
+
+    // Add vampire2 to the scene
+    scene.add(vampire2);
+  });
   gltfLoader.load(
     "vampire.glb",
     (gltf) => {
@@ -610,9 +634,9 @@ const getModel = () => {
         }
 
         const vampireChestPosition = {
-          x: vampire.position.x + 0.1, // Adjust to be slightly in front of vampire
-          y: vampire.position.y + 2.2, // Adjust slightly higher to hit the chest
-          z: vampire.position.z + 6.9, // Adjust z-axis to be slightly in front
+          x: vampire.position.x - 0.09, // Adjust to be slightly in front of vampire
+          y: vampire.position.y + 2.1, // Adjust slightly higher to hit the chest
+          z: vampire.position.z + 6.3, // Adjust z-axis to be slightly in front
         };
         gsap.to(stakeMesh.position, {
           duration: 1,
@@ -645,7 +669,7 @@ const getModel = () => {
           gltfLoader.load("vampire2.glb", (gltf) => {
             vampire2 = gltf.scene;
             vampire2.scale.set(100, 100, 100);
-            vampire2.position.set(4, -26.3, 2);
+            vampire2.position.set(4, -26.5, 2);
             vampire2.rotation.set(0, Math.PI, 0);
 
             vampire2.visible = true; // Ensure it's visible
@@ -654,13 +678,13 @@ const getModel = () => {
           });
         } else {
           vampire2.visible = true;
-          vampire2.position.set(4, -26.3, 2);
+          vampire2.position.set(4, -26.2, 2);
           console.log("Vampire in hurt pose displayed.");
         }
         // Remove the glow by resetting the emissive properties
-        stakeMesh.material.emissive = new THREE.Color(0x000000); // Set emissive to black
-        stakeMesh.material.emissiveIntensity = 0; // Set emissive intensity to 0 to remove glow
-        console.log("Glow removed from stake.");
+        // stakeMesh.material.emissive = new THREE.Color(0x000000); // Set emissive to black
+        // stakeMesh.material.emissiveIntensity = 0; // Set emissive intensity to 0 to remove glow
+        // console.log("Glow removed from stake.");
       };
       // Add event listener to trigger animation on click
       document.addEventListener("mousedown", onCoffinClick);
@@ -835,30 +859,30 @@ const getModel = () => {
     gltf.scene.position.y = -1000;
   });
 
-  gltfLoader.load("screen01.glb", (gltf) => {
-    gltf.scene.traverse((child) => (child.material = videoMaterial));
-    scene.add(gltf.scene);
-  });
-  gltfLoader.load("screen02.glb", (gltf) => {
-    gltf.scene.traverse((child) => (child.material = videoMaterial));
-    scene.add(gltf.scene);
-  });
-  gltfLoader.load("screen03.glb", (gltf) => {
-    gltf.scene.traverse((child) => (child.material = videoMaterial));
-    scene.add(gltf.scene);
-  });
-  gltfLoader.load("screen04.glb", (gltf) => {
-    gltf.scene.traverse((child) => (child.material = videoMaterial));
-    scene.add(gltf.scene);
-  });
-  gltfLoader.load("screen05.glb", (gltf) => {
-    gltf.scene.traverse((child) => (child.material = videoMaterial));
-    scene.add(gltf.scene);
-  });
-  gltfLoader.load("screen06.glb", (gltf) => {
-    gltf.scene.traverse((child) => (child.material = videoMaterial));
-    scene.add(gltf.scene);
-  });
+  // gltfLoader.load("screen01.glb", (gltf) => {
+  //   gltf.scene.traverse((child) => (child.material = videoMaterial));
+  //   scene.add(gltf.scene);
+  // });
+  // gltfLoader.load("screen02.glb", (gltf) => {
+  //   gltf.scene.traverse((child) => (child.material = videoMaterial));
+  //   scene.add(gltf.scene);
+  // });
+  // gltfLoader.load("screen03.glb", (gltf) => {
+  //   gltf.scene.traverse((child) => (child.material = videoMaterial));
+  //   scene.add(gltf.scene);
+  // });
+  // gltfLoader.load("screen04.glb", (gltf) => {
+  //   gltf.scene.traverse((child) => (child.material = videoMaterial));
+  //   scene.add(gltf.scene);
+  // });
+  // gltfLoader.load("screen05.glb", (gltf) => {
+  //   gltf.scene.traverse((child) => (child.material = videoMaterial));
+  //   scene.add(gltf.scene);
+  // });
+  // gltfLoader.load("screen06.glb", (gltf) => {
+  //   gltf.scene.traverse((child) => (child.material = videoMaterial));
+  //   scene.add(gltf.scene);
+  // });
 };
 
 // Hovering function with smooth up-and-down animation
@@ -994,11 +1018,20 @@ const onChestMarkerClick = (event) => {
       // Example of showing a text box or modal
       showInstructionText("A locked chest? Open it to see what's inside.");
 
+      camera.fov = 7; // Update the FOV for a wider or narrower view if needed
+      camera.position.set(
+        // coffin.position.x,
+        // coffin.position.y - 25,
+        // coffin.position.z + 2,
+        (controls.target.y = -4.5),
+        (controls.target.z = -6),
+        (controls.target.x = 3)
+      );
+
+      // Assuming you're using gsap or TWEEN library
       gsap.to(camera.position, {
-        duration: 5,
-        x: chest.position.x,
-        y: chest.position.y - 100,
-        z: chest.position.z + 1,
+        duration: 3, // duration of the tween (in seconds)
+        // Set new camera position
         onUpdate: () => {
           camera.lookAt(chest.position);
           controls.update();
@@ -1103,55 +1136,49 @@ const onCoffinMarkerClick = (event) => {
   if (intersections.length > 0) {
     const selectedObject = intersections[0].object;
 
+    // Check if the clicked object is the coffin marker
     if (selectedObject.name === "coffinMarker") {
       console.log("Coffin marker clicked!");
-      const coffin = scene.getObjectByName("Plane001"); // Assuming 'Plane001' is the coffin's name
+
+      // Get the coffin mesh (assuming 'Plane001' is the coffin mesh name)
+      const coffin = scene.getObjectByName("Plane001");
 
       if (coffin) {
-        // Zoom the camera towards the coffin
-        gsap.to(camera.position, {
-          duration: 2,
-          x: coffin.position.x + 0, // Adjust the camera position relative to the coffin
-          y: coffin.position.y + 0,
-          // z: coffin.position.z + -2,
-          ease: "power2.inOut",
-          onUpdate: () => {
-            if (coffinMarker) {
-              // Ensure coffinMarker still exists
-              camera.lookAt(coffinMarker.position);
-              controls.update();
-            }
-          },
-          onComplete: () => {
-            console.log("Camera zoomed in on the coffin.");
-          },
-        });
+        // Update the camera FOV and position immediately
+        camera.fov = 7; // Update the FOV for a wider or narrower view if needed
+        camera.position.set(
+          // coffin.position.x,
+          // coffin.position.y - 25,
+          // coffin.position.z + 2,
+          (controls.target.y = -4.5),
+          (controls.target.z = -8),
+          (controls.target.x = 1),
+          controls.update()
+        ); // Set new camera position
+        camera.lookAt(coffin.position); // Make the camera look at the coffin's position
+
+        // After updating the camera settings, you need to call this to apply the changes:
+        camera.updateProjectionMatrix();
+
+        // Optionally, show the instruction text
+        showInstructionText("Do you dare open it?");
+        isCoffinClickable = true;
+
+        // Move the stake closer to the coffin, if necessary
+        if (stakeMesh) {
+          stakeMesh.position.set(
+            coffin.position.x + 0,
+            coffin.position.y - 1,
+            coffin.position.z + 1
+          );
+          console.log("Stake moved near the coffin.");
+        }
+
+        // Optionally remove the coffin marker after it's clicked
+        scene.remove(coffinMarker);
+        coffinMarker = null;
       } else {
         console.error("Coffin (Plane001) not found in the scene!");
-      }
-
-      // Show the new message "Open the coffin, if you dare."
-      setTimeout(() => {
-        showInstructionText("Do you dare open it?");
-
-        // Set the flag to true, allowing the coffin to be opened
-        isCoffinClickable = true;
-        scene.remove(coffinMarker); // Remove the coffin marker from the scene
-        coffinMarker = null; // Set it to null to avoid future reference
-      }, 500); // Slight delay to match the camera zoom
-
-      // Move the stake closer to the coffin
-      if (stakeMesh) {
-        gsap.to(stakeMesh.position, {
-          x: coffinMarker?.position.x - 0,
-          y: coffinMarker?.position.y - 1,
-          z: coffinMarker?.position.z + 1,
-          duration: 2,
-          ease: "power1.out",
-          onComplete: () => {
-            console.log("Stake moved near the coffin.");
-          },
-        });
       }
     }
   }
@@ -1354,9 +1381,15 @@ const animate = () => {
   controls.update();
   firefliesMaterial.uniforms.uTime.value = elapsedTime;
 
+  // Update the annotations positions and opacity
+  // updateAnnotationOpacity();
+  // updateScreenPosition();
+
+  // Render the scene
   renderer.render(scene, camera);
   effect.render(scene, camera);
 
+  // Update mixers for animations
   if (mixer01) mixer01.update(delta);
   if (mixer02) mixer02.update(delta);
   if (mixer03) mixer03.update(delta);
