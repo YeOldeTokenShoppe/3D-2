@@ -5,9 +5,11 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OutlineEffect } from "three/addons/effects/OutlineEffect.js";
 import { gsap } from "gsap";
 import { DragControls } from "three/examples/jsm/controls/DragControls.js";
-import { Sky } from "three/examples/jsm/objects/Sky.js";
-import { MathUtils } from "three";
-import { Vector3 } from "three";
+import { initParticleBackground } from "./particleBackground";
+import { initMoonScene } from "./moonScene";
+// import { Sky } from "three/examples/jsm/objects/Sky.js";
+// import { MathUtils } from "three";
+// import { Vector3 } from "three";
 
 const loadingManager = new THREE.LoadingManager();
 
@@ -37,7 +39,7 @@ const camera = new THREE.PerspectiveCamera(
   10, // Field of view
   sizes.width / sizes.height, // Aspect ratio
   0.1, // Near clipping plane
-  200 // Far clipping plane
+  1000 // Far clipping plane
 );
 
 const renderer = new THREE.WebGLRenderer({
@@ -84,8 +86,8 @@ let animations,
   dragControls = null,
   vampire2,
   chart,
-  arrow,
-  moon,
+  // arrow,
+  // moon,
   chest,
   chestMarker = null;
 
@@ -265,7 +267,7 @@ const getModel = () => {
   });
   // Spotlight for the arrow
   const arrowLight = new THREE.SpotLight(0x00ff00, 2); // Green spotlight for emphasis
-  arrowLight.position.set(0, 20, -15); // Position behind and above the arrow
+  arrowLight.position.set(12, 20, -200); // Position behind and above the arrow
   arrowLight.target.position.set(0, 12, -20); // Aim at the arrow
   arrowLight.angle = Math.PI / 4; // Spotlight angle
   arrowLight.penumbra = 0.5; // Soft edges
@@ -300,66 +302,79 @@ const getModel = () => {
     // Add the room to the scene
     scene.add(room);
   });
-  gltfLoader.load("moon.glb", (gltf) => {
-    const moon = gltf.scene;
+  // gltfLoader.load("moon.glb", (gltf) => {
+  //   const moon = gltf.scene;
 
-    // Set the scale and position to place it in the sky
-    moon.scale.set(2, 2, 2); // Adjust the size of the moon
-    moon.position.set(15, 15, -50); // Position in the sky (adjust as needed)
-    moon.rotation.set(0, Math.PI / 5, 0);
+  //   // Make all moon materials emissive
+  //   moon.traverse((child) => {
+  //     if (child.isMesh) {
+  //       // Keep the original color/texture if it exists
+  //       child.material.emissive = new THREE.Color(0xffffcc); // Warm white glow
+  //       child.material.emissiveIntensity = 0.01; // Adjust intensity as needed
+  //     }
+  //   });
 
-    moon.layers.set(1); // Place the moon on layer 1
+  //   moon.scale.set(12, 12, 12);
+  //   moon.position.set(12, 10, -200);
+  //   moon.rotation.set(0, Math.PI / 5, 0);
+  //   moon.layers.set(1);
 
-    // Add the moon to the scene
-    scene.add(moon);
+  //   scene.add(moon);
 
-    // Check if there are animations in the GLTF file
-    if (gltf.animations && gltf.animations.length > 0) {
-      const mixer = new THREE.AnimationMixer(moon);
-      const moonAction = gltf.animations.find(
-        (clip) => clip.name === "moon|moonAction"
-      );
-      if (moonAction) {
-        const action = mixer.clipAction(moonAction);
-        action.timeScale = 0.1; // Slow down the animation to half speed
-        action.play();
-      }
+  //   // Check if there are animations in the GLTF file
+  //   if (gltf.animations && gltf.animations.length > 0) {
+  //     const mixer = new THREE.AnimationMixer(moon);
+  //     const moonAction = gltf.animations.find(
+  //       (clip) => clip.name === "moon|moonAction"
+  //     );
+  //     if (moonAction) {
+  //       const action = mixer.clipAction(moonAction);
+  //       action.timeScale = 0.1; // Slow down the animation to half speed
+  //       action.play();
+  //     }
 
-      // Update the animation mixer in the animation loop
-      const clock = new THREE.Clock();
-      function animate() {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta();
-        mixer.update(delta); // Update the mixer on each frame
-        renderer.render(scene, camera);
-      }
-      animate();
-    }
+  //     // Update the animation mixer in the animation loop
+  //     const clock = new THREE.Clock();
+  //     function animate() {
+  //       requestAnimationFrame(animate);
+  //       const delta = clock.getDelta();
+  //       mixer.update(delta); // Update the mixer on each frame
+  //       renderer.render(scene, camera);
+  //     }
+  //     animate();
+  //   }
 
-    // Adjust the spotlight to reduce shadows on the lower right
-    const moonLight = new THREE.SpotLight(0xffffff, 1.2); // Soft white light
-    moonLight.position.set(12, 18, -40); // Slightly adjusted position (closer to the moon and higher)
-    moonLight.angle = Math.PI / 3; // Widen the spotlight cone a little more
-    moonLight.penumbra = 0.5; // Softer edges
-    moonLight.decay = 2; // Light intensity diminishes with distance
-    moonLight.distance = 100; // Maximum range of the light
-    moonLight.castShadow = true;
+  //   // Adjust the spotlight to reduce shadows on the lower right
+  //   const moonLight = new THREE.SpotLight(0xffffff, 1.2); // Soft white light
+  //   moonLight.position.set(12, 18, -40); // Slightly adjusted position (closer to the moon and higher)
+  //   moonLight.angle = Math.PI / 3; // Widen the spotlight cone a little more
+  //   moonLight.penumbra = 0.5; // Softer edges
+  //   moonLight.decay = 2; // Light intensity diminishes with distance
+  //   moonLight.distance = 100; // Maximum range of the light
+  //   moonLight.castShadow = true;
 
-    // Target the center of the moon more precisely
-    moonLight.target.position.set(15, 15, -50); // Adjusted to align perfectly with the moon's center
+  //   // Target the center of the moon more precisely
+  //   moonLight.target.position.set(15, 15, -50); // Adjusted to align perfectly with the moon's center
 
-    scene.add(moonLight);
-    scene.add(moonLight.target); // Add the light's target to the scene
+  //   scene.add(moonLight);
+  //   scene.add(moonLight.target); // Add the light's target to the scene
+  //   moon.traverse((child) => {
+  //     if (child.isMesh) {
+  //       child.castShadow = true;
+  //       child.receiveShadow = true;
+  //     }
+  //   });
 
-    // Ambient light for subtle moon glow (layer 1 only)
-    const moonAmbientLight = new THREE.AmbientLight(0xffffff, 0.2); // Very soft ambient light
-    moonAmbientLight.layers.set(1); // Affects only the moon
-    scene.add(moonAmbientLight);
+  //   moonLight.castShadow = true;
+  //   // Ambient light for subtle moon glow (layer 1 only)
+  //   const moonAmbientLight = new THREE.AmbientLight(0xffffff, 0.2); // Very soft ambient light
+  //   moonAmbientLight.layers.set(1); // Affects only the moon
+  //   scene.add(moonAmbientLight);
 
-    // Optional: Tone mapping to handle brightness control
-    renderer.toneMapping = THREE.ReinhardToneMapping;
-    renderer.toneMappingExposure = 1.5; // Adjust exposure to handle brightness
-  });
+  //   // Optional: Tone mapping to handle brightness control
+  //   renderer.toneMapping = THREE.ReinhardToneMapping;
+  //   renderer.toneMappingExposure = 1.5; // Adjust exposure to handle brightness
+  // });
 
   // Ensure your room objects remain on the default layer (layer 0)
   gltfLoader.load("Things15.glb", (gltf) => {
@@ -373,42 +388,42 @@ const getModel = () => {
     scene.add(gltf.scene);
   });
 
-  gltfLoader.load(
-    "arrow.glb",
-    (gltf) => {
-      // Load the arrow into the scene
-      arrow = gltf.scene;
+  // gltfLoader.load(
+  //   "arrow.glb",
+  //   (gltf) => {
+  //     // Load the arrow into the scene
+  //     arrow = gltf.scene;
 
-      console.log("Arrow loaded:", arrow);
+  //     console.log("Arrow loaded:", arrow);
 
-      // Set scale, position, and rotation of the arrow
-      arrow.scale.set(3, 3, 3); // Scale up for visibility
-      arrow.position.set(0, 7, -29); // Adjust position (closer if necessary)
-      // arrow.rotation.set(0, Math.PI, 0); // Rotate if necessary
-      arrow.layers.set(1); // Set layer to ensure it's affected by the right light
+  //     // Set scale, position, and rotation of the arrow
+  //     arrow.scale.set(3, 3, 3); // Scale up for visibility
+  //     arrow.position.set(0, 7, -29); // Adjust position (closer if necessary)
+  //     // arrow.rotation.set(0, Math.PI, 0); // Rotate if necessary
+  //     arrow.layers.set(1); // Set layer to ensure it's affected by the right light
 
-      // Traverse through arrow to set its material and visibility
-      arrow.traverse((child) => {
-        if (child.isMesh) {
-          child.material = new THREE.MeshStandardMaterial({
-            color: 0x00ff00, // Green color
-            emissive: new THREE.Color(0x00ff00), // Add green emission
-            emissiveIntensity: 2, // Brighter emissive intensity
-            side: THREE.DoubleSide, // Ensure it's visible from all angles
-          });
-          child.castShadow = true; // Enable shadow casting
-          child.receiveShadow = true; // Enable shadow receiving
-        }
-      });
+  //     // Traverse through arrow to set its material and visibility
+  //     arrow.traverse((child) => {
+  //       if (child.isMesh) {
+  //         child.material = new THREE.MeshStandardMaterial({
+  //           color: 0x00ff00, // Green color
+  //           emissive: new THREE.Color(0x00ff00), // Add green emission
+  //           emissiveIntensity: 2, // Brighter emissive intensity
+  //           side: THREE.DoubleSide, // Ensure it's visible from all angles
+  //         });
+  //         child.castShadow = true; // Enable shadow casting
+  //         child.receiveShadow = true; // Enable shadow receiving
+  //       }
+  //     });
 
-      // Add arrow to the scene
-      scene.add(arrow);
-    },
-    undefined,
-    (error) => {
-      console.error("Error loading arrow:", error);
-    }
-  );
+  //     // Add arrow to the scene
+  //     scene.add(arrow);
+  //   },
+  //   undefined,
+  //   (error) => {
+  //     console.error("Error loading arrow:", error);
+  //   }
+  // );
 
   // Load vampire2 separately outside the vampire loader
   // gltfLoader.load("customVampire.glb", (gltf) => {
@@ -796,7 +811,7 @@ const getModel = () => {
   });
 
   const video2 = document.createElement("video");
-  video2.src = "./noise.jpg"; // Path to your video file
+  video2.src = "noise.jpg"; // Path to your video file
   video2.muted = true;
   video2.loop = true;
   video2.play();
@@ -1259,50 +1274,50 @@ const showStakePopup = () => {
   }
 };
 
-const firefliesMaterial = new THREE.ShaderMaterial({
-  uniforms: {
-    uTime: { value: 0 },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-    uSize: { value: 10 },
-  },
-  vertexShader: document.getElementById("vertexshader").textContent,
-  fragmentShader: document.getElementById("fragmentshader").textContent,
-  transparent: true,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
+// const firefliesMaterial = new THREE.ShaderMaterial({
+//   uniforms: {
+//     uTime: { value: 0 },
+//     uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+//     uSize: { value: 10 },
+//   },
+//   vertexShader: document.getElementById("vertexshader").textContent,
+//   fragmentShader: document.getElementById("fragmentshader").textContent,
+//   transparent: true,
+//   blending: THREE.AdditiveBlending,
+//   depthWrite: false,
+// });
 
-const getFireflies = () => {
-  const firefliesGeometry = new THREE.BufferGeometry();
-  const firefliesCount = 40;
-  const positionArray = new Float32Array(firefliesCount * 3);
-  const scaleArray = new Float32Array(firefliesCount * 1);
+// const getFireflies = () => {
+//   const firefliesGeometry = new THREE.BufferGeometry();
+//   const firefliesCount = 40;
+//   const positionArray = new Float32Array(firefliesCount * 3);
+//   const scaleArray = new Float32Array(firefliesCount * 1);
 
-  for (let i = 0; i < firefliesCount; i++) {
-    new THREE.Vector3(
-      (Math.random() - 0.5) * 20,
-      1 + Math.random() * 2 * 2,
-      -2 + (Math.random() - 0.5) * 8
-    ).toArray(positionArray, i * 3);
+//   for (let i = 0; i < firefliesCount; i++) {
+//     new THREE.Vector3(
+//       (Math.random() - 0.5) * 20,
+//       1 + Math.random() * 2 * 2,
+//       -2 + (Math.random() - 0.5) * 8
+//     ).toArray(positionArray, i * 3);
 
-    scaleArray[i] = Math.random();
-    scaleArray[i] = Math.random();
-  }
+//     scaleArray[i] = Math.random();
+//     scaleArray[i] = Math.random();
+//   }
 
-  firefliesGeometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(positionArray, 3)
-  );
-  firefliesGeometry.setAttribute(
-    "aScale",
-    new THREE.BufferAttribute(scaleArray, 1)
-  );
+//   firefliesGeometry.setAttribute(
+//     "position",
+//     new THREE.BufferAttribute(positionArray, 3)
+//   );
+//   firefliesGeometry.setAttribute(
+//     "aScale",
+//     new THREE.BufferAttribute(scaleArray, 1)
+//   );
 
-  const fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial);
-  scene.add(fireflies);
-};
+//   const fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial);
+//   scene.add(fireflies);
+// };
 
-getFireflies();
+// getFireflies();
 
 const onMouseDown = (event) => {
   const coords = new THREE.Vector2(
@@ -1379,7 +1394,6 @@ const animate = () => {
   const elapsedTime = clockFF.getElapsedTime();
   let delta = clock.getDelta();
   controls.update();
-  firefliesMaterial.uniforms.uTime.value = elapsedTime;
 
   // Update the annotations positions and opacity
   // updateAnnotationOpacity();
@@ -1479,3 +1493,5 @@ getCamera();
 getControls();
 getLights();
 animate();
+initParticleBackground();
+initMoonScene();
